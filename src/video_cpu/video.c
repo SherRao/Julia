@@ -109,10 +109,10 @@ void write_img()
 
     png_write_end(png_ptr, NULL);
 
-
-    for (y = 0; y < height; y++)
-        free(knapsack.data[y]);
-    free(knapsack.data);
+    // for (y = 0; y < height; y++)
+    //     free(knapsack.data[y]);
+    // free(knapsack.data);
+    
 
     fclose(fp);
 }
@@ -132,7 +132,6 @@ void pack_calc(int index)
     // CHANGE PIXELS
     for (y = index; y < height /*SIZE + index*/; y++, c++)
     {
-        // printf("%d\n",y);
         png_byte *row = knapsack.data[y];
 
         for (x = 0; x <= width; x++)
@@ -140,9 +139,6 @@ void pack_calc(int index)
             png_byte *ptr = &(row[x * 4]);
 
             bit = 0;
-            // scale = 1.5;
-            // cx = -0.8;
-            // cy = 0.156;
             zx = scale * (float)(width / 2 - x) / (width / 2);
             zy = scale * (float)(height / 2 - y) / (height / 2);
 
@@ -213,17 +209,15 @@ int main(int argc, char **argv)
         int wants_work = 1;
         
         for(int i = 0; i < num_frames; i++){
-            fr.imaginary = 0.136 + (0.01 * i);
+            fr.imaginary = 0.136 + (0.001 * i);
             fr.index = i;
-            fr.real = -0.8;
+            fr.real = -0.8 + (0.001 * i);
 
             //Ask for worker
             MPI_Recv(&wants_work, 1, MPI_INT, MPI_ANY_SOURCE, 3, MPI_COMM_WORLD, &status);
 
             printf("%d <<<\n", wants_work);
             MPI_Send(&fr, 4, MPI_INT, wants_work, 1, MPI_COMM_WORLD);
-            // for (int k = 0; k < height; k++)
-            //     MPI_Send(knapsack.data[k], knapsack.width * 4, MPI_BYTE, wants_work, 1, MPI_COMM_WORLD);
         }
         
         fr.index = -1;
@@ -237,9 +231,7 @@ int main(int argc, char **argv)
             MPI_Send(&process_Rank, 1, MPI_INT, 0, 3, MPI_COMM_WORLD);
 
             MPI_Recv(&fr, 4, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            // receive the data matrix
-            // for (int k = knapsack.place; k < height; k++)
-            //     MPI_Recv(knapsack.data[k], knapsack.width * 4, MPI_BYTE, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            
             if(fr.index != -1){
                 allocate();
                 pack_calc(0);
@@ -247,12 +239,14 @@ int main(int argc, char **argv)
             }
         }
 
-
-
-       
-
         printf("Recieving %f - %d - %f \n", fr.imaginary, fr.index, fr.real);
     }
+
+
+    //Free memory when done
+    for (y = 0; y < height; y++)
+        free(knapsack.data[y]);
+    free(knapsack.data);
 
     printf("Hello World from process %d of %d\n", process_Rank, size_Of_Cluster);
 

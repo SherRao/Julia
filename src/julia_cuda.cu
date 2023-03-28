@@ -1,9 +1,10 @@
+#include "cuda_runtime.h"
+#include "device_launch_parameter.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <complex>
 #include <string.h>
-#include <IL/il.h>
-#include <IL/ilu.h>
+
 #include <time.h>
 
 using namespace std;
@@ -15,7 +16,6 @@ using namespace std;
 __host__ __device__ void HSVtoRGB(float *r, float *g, float *b, float h, float s, float v);
 void saveImage(int width, int height, unsigned char *bitmap, complex<float> seed, int flag);
 void compute_julia_GPU(complex<float> c, unsigned char *image);
-bool compare_CPU_GPU(unsigned char *image_CPU, unsigned char *image_GPU);
 __global__ void julia_kernel(unsigned char *image);
 
 // complex number c is declared as array of float, [real, imaginary] in the constant memory.
@@ -23,43 +23,34 @@ __constant__ float d_c[2];
 
 int main(int argc, char **argv)
 {
-    complex<float> c(0.285f, 0.01f);
-    if (argc > 2)
-    {
-        c.real(atof(argv[1]));
-        c.imag(atof(argv[2]));
-    }
-    else
-        fprintf(stderr, "Usage: %s <real> <imag>\nWhere <real> and <imag> form the complex seed for the Julia set.\n", argv[0]);
+    complex<float> c(-0.8f, 0.156f);
+    // if (argc > 2)
+    // {
+    //     c.real(atof(argv[1]));
+    //     c.imag(atof(argv[2]));
+    // }
+    // else
+    //     fprintf(stderr, "Usage: %s <real> <imag>\nWhere <real> and <imag> form the complex seed for the Julia set.\n", argv[0]);
 
-    ilInit();
-    unsigned char *image_CPU_host = new unsigned char[N * N * 3]; // RGB image
+    // ilInit();
     unsigned char *image_GPU_host = new unsigned char[N * N * 3]; // RGB image
 
-    const clock_t begin_time = clock();
-
-    float runTime = (float)(clock() - begin_time) / CLOCKS_PER_SEC;
-    printf("Time for julia set computation CPU: %f seconds \n", runTime);
 
     compute_julia_GPU(c, image_GPU_host);
 
-    bool result = compare_CPU_GPU(image_CPU_host, image_GPU_host);
-    fprintf(stderr, "CPU-GPU results do %smatch!\n", (result) ? "" : "not ");
     // flag is 0 for the cpu image and 1 for gpu image
-    saveImage(N, N, image_CPU_host, c, 0);
     saveImage(N, N, image_GPU_host, c, 1);
-    delete[] image_CPU_host;
     delete[] image_GPU_host;
 }
 
 
 void compute_julia_GPU(complex<float> c, unsigned char *image)
 {
-    cudaEvent_t begin, begin_kernel, stop_kernel, stop;
-    cudaEventCreate(&begin);
-    cudaEventCreate(&begin_kernel);
-    cudaEventCreate(&stop_kernel);
-    cudaEventCreate(&stop);
+    // cudaEvent_t begin, begin_kernel, stop_kernel, stop;
+    // cudaEventCreate(&begin);
+    // cudaEventCreate(&begin_kernel);
+    // cudaEventCreate(&stop_kernel);
+    // cudaEventCreate(&stop);
     unsigned char *device_image;
 
     cudaMalloc((void **)&device_image, N * N * 3 * sizeof(unsigned char));
@@ -71,24 +62,24 @@ void compute_julia_GPU(complex<float> c, unsigned char *image)
     grid.x = N / block.x;
     grid.y = N / block.y;
 
-    cudaEventRecord(begin);
+    // cudaEventRecord(begin);
     cudaMemcpyToSymbol(d_c, &h_c, 2 * sizeof(float));
 
-    cudaEventRecord(begin_kernel);
+    // cudaEventRecord(begin_kernel);
     julia_kernel<<<grid, block>>>(device_image);
-    cudaEventRecord(stop_kernel);
+    // cudaEventRecord(stop_kernel);
 
     cudaMemcpy(image, device_image, N * N * 3 * sizeof(unsigned char), cudaMemcpyDeviceToHost);
 
-    cudaEventRecord(stop);
-    cudaEventSynchronize(stop_kernel);
-    cudaEventSynchronize(stop);
+    // cudaEventRecord(stop);
+    // cudaEventSynchronize(stop_kernel);
+    // cudaEventSynchronize(stop);
 
     float kernelTime, totalTime; // Initialize elapsedTime;
-    cudaEventElapsedTime(&kernelTime, begin_kernel, stop_kernel);
-    cudaEventElapsedTime(&totalTime, begin, stop);
-    printf("Time of KERNEL for julia set calculation is: %fms\n", kernelTime);
-    printf("Total time for julia set calculation is: %fms\n", totalTime);
+    // cudaEventElapsedTime(&kernelTime, begin_kernel, stop_kernel);
+    // cudaEventElapsedTime(&totalTime, begin, stop);
+    // printf("Time of KERNEL for julia set calculation is: %fms\n", kernelTime);
+    // printf("Total time for julia set calculation is: %fms\n", totalTime);
 
     cudaFree(device_image);
 }
@@ -133,28 +124,6 @@ __global__ void julia_kernel(unsigned char *device_image)
     device_image[(x + y * N) * 3 + 2] = (unsigned char)(r * 255);
 }
 
-// Returns true if GPU results match CPU results, else returns false
-bool compare_CPU_GPU(unsigned char *image_CPU, unsigned char *image_GPU)
-{
-    bool result = true;
-    int nelem = N * N * 3;
-    int count = 0;
-    float average_diff = 0.0f;
-    for (int i = 0; i < nelem; i++)
-    {
-        if (image_CPU[i] != image_GPU[i])
-        {
-            result = false;
-            count++;
-            average_diff += abs(image_CPU[i] - image_GPU[i]);
-        }
-    }
-    float percent_diff = count / float(nelem);
-    average_diff = average_diff / float(nelem);
-    printf("The CPU and GPU images are %f percent similar.\n", (1.0f - percent_diff) * 100);
-    printf("percetage of pixels different = %f and average difference is = %f \n", percent_diff * 100, average_diff);
-    return result;
-}
 
 void saveImage(int width, int height, unsigned char *bitmap, complex<float> seed, int flag)
 {
