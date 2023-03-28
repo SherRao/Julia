@@ -38,11 +38,22 @@ typedef struct Block
     png_byte **data;
 } block;
 
+typedef struct Frame{
+    int index;
+    float real;
+    float imaginary;
+} frame;
+
+frame fr;
 block knapsack;
 png_byte **img_data;
 
 void write_img()
 {
+    char buf[12];
+    snprintf(buf, 12, "%d.png", fr.index);
+    file = buf;
+
     color_type = PNG_COLOR_TYPE_RGBA;
     bit_depth = 8;
 
@@ -86,23 +97,18 @@ void write_img()
     png_set_compression_level(png_ptr, 6);
     png_set_filter(png_ptr, 0, 0);
 
-    printf("HERE<<<<\n");
+    // printf("HERE<<<<\n");
     // png_write_image(png_ptr, row_pointers);
     png_write_image(png_ptr, knapsack.data);
     // png_write_rows(png_ptr, &knapsack.data, 40);
     // png_write_row(png_ptr, &knapsack.data[4]);
-    printf("THERE>>>>>\n");
+    // printf("THERE>>>>>\n");
     /* end write */
     if (setjmp(png_jmpbuf(png_ptr)))
         printf("[write_png_file] Error during end of write");
 
     png_write_end(png_ptr, NULL);
 
-    // height = SIZE;
-    /* cleanup heap allocation */
-    // for (y = 0; y < height; y++)
-    //     free(row_pointers[y]);
-    // free(row_pointers);
 
     for (y = 0; y < height; y++)
         free(knapsack.data[y]);
@@ -115,8 +121,8 @@ void pack_calc(int index)
 {
     int bit = 0;
     float scale = 1.5;
-    float cx = -0.8;
-    float cy = 0.156;
+    float cx = fr.real;
+    float cy = fr.imaginary;
     float zx = scale * (float)(width / 2 - x) / (width / 2);
     float zy = scale * (float)(height / 2 - y) / (height / 2);
     int i = 0;
@@ -134,9 +140,9 @@ void pack_calc(int index)
             png_byte *ptr = &(row[x * 4]);
 
             bit = 0;
-            scale = 1.5;
-            cx = -0.8;
-            cy = 0.156;
+            // scale = 1.5;
+            // cx = -0.8;
+            // cy = 0.156;
             zx = scale * (float)(width / 2 - x) / (width / 2);
             zy = scale * (float)(height / 2 - y) / (height / 2);
 
@@ -189,47 +195,63 @@ int main(int argc, char **argv)
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &size_Of_Cluster);
     MPI_Comm_rank(MPI_COMM_WORLD, &process_Rank);
+    MPI_Status status;
 
     width = 3840;
     height = 2160;
 
+    fr.imaginary = 0.0;
+    fr.index = 0;
+    fr.real = 0.0;
+
     allocate();
 
+    // Tags: 1 - Sending Block info, 2 - Sending index, 3 - Work request
     if (process_Rank == 0)
     {
-        // knapsack.place = 500;
-        // Send a Knapsack
-        MPI_Send(&knapsack, 4, MPI_INT, 1, 1, MPI_COMM_WORLD);
-        for (int k = 0; k < SIZE; k++)
-            MPI_Send(knapsack.data[k], knapsack.width * 4, MPI_BYTE, 1, 1, MPI_COMM_WORLD);
+        int num_frames = 100;
+        int wants_work = 1;
+        
+        for(int i = 0; i < num_frames; i++){
+            fr.imaginary = 0.136 + (0.01 * i);
+            fr.index = i;
+            fr.real = -0.8;
 
-        for (int k = 0; k < SIZE; k++)
-            MPI_Recv(knapsack.data[k], knapsack.width * 4, MPI_BYTE, 1, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            //Ask for worker
+            MPI_Recv(&wants_work, 1, MPI_INT, MPI_ANY_SOURCE, 3, MPI_COMM_WORLD, &status);
 
-        clock_t begin = clock();
-        write_img();
-        clock_t end = clock();
-        double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-        printf("Write time: %f %d\n", time_spent, knapsack.width);
+            printf("%d <<<\n", wants_work);
+            MPI_Send(&fr, 4, MPI_INT, wants_work, 1, MPI_COMM_WORLD);
+            // for (int k = 0; k < height; k++)
+            //     MPI_Send(knapsack.data[k], knapsack.width * 4, MPI_BYTE, wants_work, 1, MPI_COMM_WORLD);
+        }
+        
+        fr.index = -1;
+        for(int i = 1; i < size_Of_Cluster; i++)
+            MPI_Send(&fr, 4, MPI_INT, i, 1, MPI_COMM_WORLD);
     }
-    else
+    else //if(process_Rank == 1)
     {
 
-        MPI_Recv(&knapsack, 4, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        // receive the data matrix
-        for (int k = knapsack.place; k < SIZE + knapsack.place; k++)
-            MPI_Recv(knapsack.data[k], knapsack.width * 4, MPI_BYTE, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        while(fr.index >= 0){
+            MPI_Send(&process_Rank, 1, MPI_INT, 0, 3, MPI_COMM_WORLD);
 
-        clock_t begin = clock();
-        pack_calc(0);
-        clock_t end = clock();
-        double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-        printf("Pack time: %f %d\n", time_spent, knapsack.width);
+            MPI_Recv(&fr, 4, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            // receive the data matrix
+            // for (int k = knapsack.place; k < height; k++)
+            //     MPI_Recv(knapsack.data[k], knapsack.width * 4, MPI_BYTE, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            if(fr.index != -1){
+                allocate();
+                pack_calc(0);
+                write_img();
+            }
+        }
 
-        for (int k = 0; k < SIZE; k++)
-            MPI_Send(knapsack.data[k], knapsack.width * 4, MPI_BYTE, 0, 2, MPI_COMM_WORLD);
 
-        printf("Recieving %d\n", knapsack.place);
+
+       
+
+        printf("Recieving %f - %d - %f \n", fr.imaginary, fr.index, fr.real);
     }
 
     printf("Hello World from process %d of %d\n", process_Rank, size_Of_Cluster);

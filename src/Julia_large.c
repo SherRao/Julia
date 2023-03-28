@@ -134,9 +134,9 @@ void pack_calc(int index)
             png_byte *ptr = &(row[x * 4]);
 
             bit = 0;
-            scale = 1.5;
-            cx = -0.8;
-            cy = 0.156;
+            // scale = 1.5;
+            // cx = -0.8;
+            // cy = 0.156;
             zx = scale * (float)(width / 2 - x) / (width / 2);
             zy = scale * (float)(height / 2 - y) / (height / 2);
 
@@ -181,18 +181,6 @@ void allocate()
     knapsack.data = img_data;
 }
 
-void pack(int index, int size)
-{
-    // knapsack.rows = (png_bytep *)malloc(sizeof(png_bytep) * size);
-    // knapsack.size = size;
-    // knapsack.place = index;
-
-    // for (y = 0; y < size; y++)
-    // {
-    //     knapsack.rows[y] = (png_byte *)malloc(sizeof(png_bytep) * width);
-    //     knapsack.rows[y] = row_pointers[index + y];
-    // }
-}
 
 int main(int argc, char **argv)
 {
@@ -224,7 +212,7 @@ int main(int argc, char **argv)
         double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
         printf("Write time: %f %d\n", time_spent, knapsack.width);
     }
-    else
+    else if(process_Rank == 1)
     {
 
         MPI_Recv(&knapsack, 4, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
