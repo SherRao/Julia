@@ -1,3 +1,4 @@
+// mpicc video.c -o hello -O3 -lpng && mpirun -np 5 --use-hwthread-cpus  ./hello
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>

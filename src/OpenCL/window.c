@@ -1,4 +1,7 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+// clang -o main window.c -L/usr/local/lib -lglfw -framework OpenGL
 
 #define GL_SILENCE_DEPRECATION
 
@@ -8,6 +11,8 @@
 
 // For includes related to OpenGL, make sure their are included after glfw3.h
 #include <OpenGL/gl3.h>
+
+#define SIZE 1024
 
 void errorCallback(int error, const char *description)
 {
@@ -139,8 +144,18 @@ int main(void)
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
     glEnableVertexAttribArray(0);
 
-    // OpenGL initializations end here
 
+    // OpenGL initializations end here
+    const int LIST_SIZE = SIZE * SIZE; // 1024 * 1024;
+    unsigned char *data = (unsigned char *)malloc(sizeof(unsigned char) * LIST_SIZE * 4);
+
+    for(int y = 0; y < SIZE; y++)
+    for(int x = 0; x < SIZE; x++)
+    {
+        data[y * SIZE * 4 + x * 4] = 255;
+        data[y * SIZE * 4 + x * 4 + 1] = 0;
+        data[y * SIZE * 4 + x * 4 + 2] = 0;
+    }
     // Loop until the user closes the window
     while (!glfwWindowShouldClose(window))
     {
@@ -155,6 +170,7 @@ int main(void)
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
+        // glDrawPixels(width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
         // Swap front and back buffers
         glfwSwapBuffers(window);
 
