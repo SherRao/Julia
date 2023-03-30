@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 // clang -o main window.c -L/usr/local/lib -lglfw -framework OpenGL
+// clang - o main window2.c - lglfw - framework OpenGL - framework OpenCL &&./ main
 
 #define GL_SILENCE_DEPRECATION
 
@@ -24,6 +25,8 @@
 // #include <OpenGL/gl3.h>
 
 #define SIZE 1024 * 2
+
+void renderer(unsigned char *data, unsigned char *A);
 
 void errorCallback(int error, const char *description)
 {
@@ -75,6 +78,7 @@ int main(void)
         int i;
         const int LIST_SIZE = SIZE * SIZE; // 1024 * 1024;
         unsigned char *A = (unsigned char *)malloc(sizeof(unsigned char) * LIST_SIZE * 4);
+        float B[2] = {-0.8, 0.143};
 
         // Load the kernel source code into the array source_str
         FILE *fp;
@@ -113,10 +117,14 @@ int main(void)
         // Create memory buffers on the device for each vector
         cl_mem a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY,
                                           LIST_SIZE * sizeof(unsigned char) * 4, NULL, &ret);
+        cl_mem b_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY,
+                                          sizeof(float) * 2, NULL, &ret);
 
         // Copy the lists A and B to their respective memory buffers
         ret = clEnqueueWriteBuffer(command_queue, a_mem_obj, CL_TRUE, 0,
                                    LIST_SIZE * sizeof(unsigned char) * 4, A, 0, NULL, NULL);
+        ret = clEnqueueWriteBuffer(command_queue, b_mem_obj, CL_TRUE, 0,
+                                   sizeof(float) * 2, B, 0, NULL, NULL);
 
         // Create a program from the kernel source
         cl_program program = clCreateProgramWithSource(context, 1,
@@ -130,6 +138,7 @@ int main(void)
 
         // Set the arguments of the kernel
         ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&a_mem_obj);
+        ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&b_mem_obj);
 
         // Execute the OpenCL kernel on the list
         size_t global_item_size = LIST_SIZE; // Process the entire lists
@@ -176,12 +185,31 @@ int main(void)
     // Loop until the user closes the window
     while (!glfwWindowShouldClose(window))
     {
+        begin = clock();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        B[1] += 0.0001;
+        // printf(" %f ", B[1]);
+
+        // Generate a frame
+
+        ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&a_mem_obj);
+        ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&b_mem_obj);
+        // ret = clEnqueueWriteBuffer(command_queue, a_mem_obj, CL_TRUE, 0,
+        //                            LIST_SIZE * sizeof(unsigned char) * 4, A, 0, NULL, NULL);
+        ret = clEnqueueWriteBuffer(command_queue, b_mem_obj, CL_TRUE, 0,
+                                   sizeof(float) * 2, B, 0, NULL, NULL);
+        ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL,
+                                     &global_item_size, &local_item_size, 0, NULL, NULL);
+        ret = clEnqueueReadBuffer(command_queue, a_mem_obj, CL_TRUE, 0,
+                                  LIST_SIZE * sizeof(unsigned char) * 4, A, 0, NULL, NULL);
+        renderer(data, A);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SIZE, SIZE, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 
         // Resize the viewport
         int width, height;
         glfwGetFramebufferSize(window, &width, &height);
-        // glViewport(0, 0, width, height);
+        glViewport(0, 0, width, height);
 
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
@@ -207,10 +235,24 @@ int main(void)
         glfwSwapBuffers(window);
         glfwWaitEvents();
         // Poll for and process events
-        // glfwPollEvents();
+        glfwPollEvents();
+        end = clock();
+        time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+        // printf("Pack time: %f < %c >\n", time_spent, A[4]);
     }
 
     glfwDestroyWindow(window);
     glfwTerminate();
     return 0;
+}
+
+void renderer(unsigned char *data, unsigned char *A)
+{
+    for (int y = 0; y < SIZE; ++y)
+        for (int x = 0; x < SIZE; ++x)
+        {
+            data[y * SIZE * 3 + x * 3] = A[y * SIZE * 4 + x * 4];
+            data[y * SIZE * 3 + x * 3 + 1] = A[y * SIZE * 4 + x * 4 + 1];
+            data[y * SIZE * 3 + x * 3 + 2] = A[y * SIZE * 4 + x * 4 + 2];
+        }
 }

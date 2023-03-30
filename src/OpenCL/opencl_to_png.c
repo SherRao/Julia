@@ -51,7 +51,7 @@ int main(void)
     int i;
     const int LIST_SIZE = SIZE * SIZE; // 1024 * 1024;
     unsigned char *A = (unsigned char *)malloc(sizeof(unsigned char) * LIST_SIZE * 4);
-  
+    float B[2] ={-0.8, 0.153};
 
     // Load the kernel source code into the array source_str
     FILE *fp;
@@ -90,10 +90,14 @@ int main(void)
     // Create memory buffers on the device for each vector
     cl_mem a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY,
                                       LIST_SIZE * sizeof(unsigned char) * 4, NULL, &ret);
+    cl_mem b_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY,
+                                      sizeof(float)*2, NULL, &ret);
 
     // Copy the lists A and B to their respective memory buffers
     ret = clEnqueueWriteBuffer(command_queue, a_mem_obj, CL_TRUE, 0,
                                LIST_SIZE * sizeof(unsigned char) * 4, A, 0, NULL, NULL);
+    ret = clEnqueueWriteBuffer(command_queue, b_mem_obj, CL_TRUE, 0,
+                               sizeof(float)*2, B, 0, NULL, NULL);
 
     // Create a program from the kernel source
     cl_program program = clCreateProgramWithSource(context, 1,
@@ -107,6 +111,7 @@ int main(void)
 
     // Set the arguments of the kernel
     ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&a_mem_obj);
+    ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&b_mem_obj);
 
     // Execute the OpenCL kernel on the list
     size_t global_item_size = LIST_SIZE; // Process the entire lists
@@ -117,6 +122,8 @@ int main(void)
     // Read the memory buffer C on the device to the local variable C
     ret = clEnqueueReadBuffer(command_queue, a_mem_obj, CL_TRUE, 0,
                               LIST_SIZE * sizeof(unsigned char) * 4, A, 0, NULL, NULL);
+    // ret = clEnqueueReadBuffer(command_queue, b_mem_obj, CL_TRUE, 0,
+    //                           sizeof(float) * 2, B, 0, NULL, NULL);
 
     // Display the result to the screen
     // for (i = 0; i < LIST_SIZE * 4; i++)
@@ -128,7 +135,7 @@ int main(void)
 
     clock_t end = clock();
     double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-    printf("Pack time: %f < %c >\n", time_spent, A[4]);
+    printf("Pack time: %f < %f >\n", time_spent, B[1]);
     
     write_img();
 
