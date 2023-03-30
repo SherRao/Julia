@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <time.h>
 
+// clang -framework OpenCL opencl_to_png.c -o run -lpng && ./run
+
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
 #else

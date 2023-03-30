@@ -6,13 +6,13 @@
 #define GL_SILENCE_DEPRECATION
 
 // Without this gl.h gets included instead of gl3.h
-#define GLFW_INCLUDE_NONE
+// #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
 // For includes related to OpenGL, make sure their are included after glfw3.h
-#include <OpenGL/gl3.h>
+// #include <OpenGL/gl3.h>
 
-#define SIZE 1024
+#define SIZE 1024 * 2
 
 void errorCallback(int error, const char *description)
 {
@@ -35,147 +35,103 @@ int main(void)
     GLFWwindow *window;
 
     // Set callback for errors
-    glfwSetErrorCallback(errorCallback);
+    // glfwSetErrorCallback(errorCallback);
 
     // Initialize the library
     if (!glfwInit())
         return -1;
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    // glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    // glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
 
-    // Without these two hints, nothing above OpenGL version 2.1 is supported
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    // // Without these two hints, nothing above OpenGL version 2.1 is supported
+    // glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+    // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create a windowed mode window and its OpenGL context
-    window = glfwCreateWindow(640, 480, "Running OpenGL on Mac", NULL, NULL);
+    window = glfwCreateWindow(1024, 1024, "CP431: Julia Sets", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
         return -1;
     }
 
-    // Set callback for window
-    glfwSetKeyCallback(window, keyCallback);
 
-    // Set callback fro framebuffer
-    glfwSetFramebufferSizeCallback(window, frameBufferResizeCallback);
+    // Set callback for window
+    // glfwSetKeyCallback(window, keyCallback);
+
+    // // Set callback fro framebuffer
+    // glfwSetFramebufferSizeCallback(window, frameBufferResizeCallback);
 
     // Make the window's context current
-    glfwMakeContextCurrent(window);
+    // glfwMakeContextCurrent(window);
 
-    // Used to avoid screen tearing
-    glfwSwapInterval(1);
+    // // Used to avoid screen tearing
+    // glfwSwapInterval(1);
 
-    // OpenGL initializations start from here
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-
-    /* Vertex array object*/
-    unsigned int VAO;
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-
-    // Vertex data and buffer
-    float vertices[] = {
-        -0.5f, -0.5f, 0.0f,
-        0.5f, -0.5f, 0.0f,
-        0.0f, 0.5f, 0.0f};
-    unsigned int VBO;
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    // Vertex shader
-    const char *vertexShaderSource = "#version 410 core\n"
-                                     "layout (location = 0) in vec3 aPos;\n"
-                                     "void main()\n"
-                                     "{\n"
-                                     "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-                                     "}\0";
-    unsigned int vertexShader;
-    vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-    glCompileShader(vertexShader);
-    int success;
-    char infoLog[512];
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        fputs(infoLog, stderr);
-    }
-
-    // Fragment shader
-    const char *fragmentShaderSource = "#version 410 core\n"
-                                       "out vec4 FragColor;\n"
-                                       "void main()\n"
-                                       "{\n"
-                                       "   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-                                       "}\0";
-    unsigned int fragmentShader;
-    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-    glCompileShader(fragmentShader);
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        fputs(infoLog, stderr);
-    }
-
-    // Shader program
-    unsigned int shaderProgram;
-    shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if (!success)
-    {
-        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        fputs(infoLog, stderr);
-    }
-    glUseProgram(shaderProgram);
-
-    // Binding the buffers
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
-    glEnableVertexAttribArray(0);
+    // // OpenGL initializations start from here
+    // glClearColor(0.5f, 0.3f, 0.3f, 1.0f);
 
 
     // OpenGL initializations end here
-    const int LIST_SIZE = SIZE * SIZE; // 1024 * 1024;
-    unsigned char *data = (unsigned char *)malloc(sizeof(unsigned char) * LIST_SIZE * 4);
 
-    for(int y = 0; y < SIZE; y++)
-    for(int x = 0; x < SIZE; x++)
-    {
-        data[y * SIZE * 4 + x * 4] = 255;
-        data[y * SIZE * 4 + x * 4 + 1] = 0;
-        data[y * SIZE * 4 + x * 4 + 2] = 0;
-    }
+    const int LIST_SIZE = SIZE * SIZE; // 1024 * 1024;
+    unsigned char *data = (unsigned char *)malloc(sizeof(unsigned char) * LIST_SIZE * 3);
+
+    for (int y = 0; y < SIZE; ++y)
+        for (int x = 0; x < SIZE; ++x)
+        {
+            data[y * SIZE * 3 + x * 3] = 50;
+            data[y * SIZE * 3 + x * 3 + 1] = 255;
+            data[y * SIZE * 3 + x * 3 + 2] = 150;
+        }
+
+    glfwMakeContextCurrent(window);
+
+    GLuint texture_handle;
+    glGenTextures(1, &texture_handle);
+    glBindTexture(GL_TEXTURE_2D, texture_handle);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SIZE, SIZE, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+
     // Loop until the user closes the window
     while (!glfwWindowShouldClose(window))
     {
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
         // Resize the viewport
         int width, height;
         glfwGetFramebufferSize(window, &width, &height);
-        glViewport(0, 0, width, height);
+        // glViewport(0, 0, width, height);
 
-        // OpenGL Rendering related code
-        glClear(GL_COLOR_BUFFER_BIT);
-        glUseProgram(shaderProgram);
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        glOrtho(0,width,0,height,-1,1);
+        glMatrixMode(GL_MODELVIEW);
 
-        // glDrawPixels(width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
-        // Swap front and back buffers
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, texture_handle);
+        glBegin(GL_QUADS);
+            glTexCoord2d(0, 0); glVertex2i(0,0);
+            glTexCoord2d(1, 0); glVertex2i(SIZE, 0);
+            glTexCoord2d(1, 1); glVertex2i(SIZE, SIZE);
+            glTexCoord2d(0, 1); glVertex2i(0, SIZE);
+        glEnd();
+        glDisable(GL_TEXTURE_2D);
+
+
+            // glDrawPixels(width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
+            // Swap front and back buffers
         glfwSwapBuffers(window);
-
-        // Poll for and process events
-        glfwPollEvents();
+        glfwWaitEvents();
+            // Poll for and process events
+            // glfwPollEvents();
     }
 
     glfwDestroyWindow(window);

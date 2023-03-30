@@ -56,3 +56,7 @@ __kernel void julia(__global uchar3 *A){ //, const unsigned int count){ //(__glo
         A[i].z = 204;
     }
 }
+
+
+
+
