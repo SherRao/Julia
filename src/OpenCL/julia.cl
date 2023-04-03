@@ -34,6 +34,7 @@ __kernel void julia(__global uchar3 *A, __global float *B){ //, const unsigned i
                 {
                     //bit = 1;
                     bit = j % 5;
+                    if(bit == 0) bit = 5;
                     break;
                 }
             }
@@ -47,9 +48,9 @@ __kernel void julia(__global uchar3 *A, __global float *B){ //, const unsigned i
     // }
 
     if (bit == 0){
-        A[i].x = 204;
-        A[i].y = 196;
-        A[i].z = 53;
+        A[i].x = 0;
+        A[i].y = 0;
+        A[i].z = 0;
     }
     else if (bit == 1){
         A[i].x = 20;

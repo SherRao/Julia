@@ -78,7 +78,10 @@ int main(void)
         int i;
         const int LIST_SIZE = SIZE * SIZE; // 1024 * 1024;
         unsigned char *A = (unsigned char *)malloc(sizeof(unsigned char) * LIST_SIZE * 4);
-        float B[2] = {-0.8, 0.143};
+        // float B[2] = {-0.8, 0.143};
+        float B[2] = {-1.0, 0.0};
+        // float B[2] = {0.3, -0.4};
+        // float B[2] = {-0.1, 0.8};
 
         // Load the kernel source code into the array source_str
         FILE *fp;
