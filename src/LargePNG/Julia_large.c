@@ -194,8 +194,10 @@ int main(int argc, char **argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &process_Rank);
     MPI_Status status;
 
-    width = 5840;
-    height = 5160;
+    width = 30840;
+    height = 30160;
+    int cluster = size_Of_Cluster - 1;
+    // cluster = 2 - 1;
 
     int num_blocks = (height / SIZE);// add plus one edge case
 
@@ -203,38 +205,38 @@ int main(int argc, char **argv)
 
     if (process_Rank == 0)
     {
-        // knapsack.place = 500;
         int wants_work = 1;
 
         // First give out work
-        for(int i = 0; i < 1 /* size_Of_Cluster */; i++){
+        for (int i = 0; i < cluster; i++)
+        {
             knapsack.place = i * SIZE;
 
             MPI_Recv(&wants_work, 1, MPI_INT, MPI_ANY_SOURCE, 3, MPI_COMM_WORLD, &status);
 
             // Send a Knapsack
-            MPI_Send(&knapsack, 4, MPI_INT, 1, 1, MPI_COMM_WORLD);
-            
+            MPI_Send(&knapsack, 4, MPI_INT, wants_work, 1, MPI_COMM_WORLD);
+
             // for (int k = 0; k < SIZE; k++){
             //     MPI_Send(knapsack.data[k], knapsack.width * 4, MPI_BYTE, 1, 1, MPI_COMM_WORLD);
             // }
         }
-        
+
         printf("HELLLLLLLLOOOOOOO%d\n", num_blocks);
-        for (int i = 0; i < num_blocks - 1 /*size_Of_Cluster*/ ; i++)
+        for (int i = 0; i < num_blocks - cluster; i++)
         {
             
             MPI_Recv(&wants_work, 1, MPI_INT, MPI_ANY_SOURCE, 5, MPI_COMM_WORLD, &status);
-            MPI_Recv(&knapsack, 4, MPI_INT, 1, 8, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(&knapsack, 4, MPI_INT, wants_work, 8, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
             for (int k = 0; k < SIZE; k++)
-                MPI_Recv(knapsack.data[k + knapsack.place], knapsack.width * 4, MPI_BYTE, 1, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                MPI_Recv(knapsack.data[k + knapsack.place], knapsack.width * 4, MPI_BYTE, wants_work, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
             if (i == num_blocks - 1) knapsack.is_done = 1;
 
-            knapsack.place = i * SIZE + (1 /*size_of*/* SIZE);
+            knapsack.place = i * SIZE + (cluster * SIZE);
             // Send a Knapsack
-            MPI_Send(&knapsack, 4, MPI_INT, 1, 7, MPI_COMM_WORLD);
+            MPI_Send(&knapsack, 4, MPI_INT, wants_work, 7, MPI_COMM_WORLD);
             // if(knapsack.is_done != 1)
             // for (int k = 0; k < SIZE; k++)
             //     MPI_Send(knapsack.data[k], knapsack.width * 4, MPI_BYTE, 1, 1, MPI_COMM_WORLD);
@@ -249,7 +251,7 @@ int main(int argc, char **argv)
        
 
         }
-    else if(process_Rank == 1)
+    else //if(process_Rank == 1)
     {
         // Ask for work
         MPI_Send(&process_Rank, 1, MPI_INT, 0, 3, MPI_COMM_WORLD);
@@ -259,32 +261,33 @@ int main(int argc, char **argv)
         //     MPI_Recv(knapsack.data[k], knapsack.width * 4, MPI_BYTE, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
         pack_calc(knapsack.place);
+        printf("heerrre%d\n", knapsack.place);
         
-        clock_t begin = clock();
+        // clock_t begin = clock();
 
         while (knapsack.is_done == 0)
         {
             
             MPI_Send(&process_Rank, 1, MPI_INT, 0, 5, MPI_COMM_WORLD);
             MPI_Send(&knapsack, 4, MPI_INT, 0, 8, MPI_COMM_WORLD);
+            
 
             for (int k = 0; k < SIZE; k++)
                 MPI_Send(knapsack.data[k + knapsack.place], knapsack.width * 4, MPI_BYTE, 0, 2, MPI_COMM_WORLD);
-
+            printf("NOT >>>>>\n");
             MPI_Recv(&knapsack, 4, MPI_INT, 0, 7, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             // if(knapsack.is_done != 1)
             // for (int k = knapsack.place; k < SIZE + knapsack.place; k++)
             //     MPI_Recv(knapsack.data[k], knapsack.width * 4, MPI_BYTE, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-            printf("heerrre\n");
             pack_calc(knapsack.place);
             
             printf("Recieving %d\n", knapsack.place);
         }
 
-        clock_t end = clock();
-        double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-        printf("Pack time: %f %d\n", time_spent, knapsack.place);
+        // clock_t end = clock();
+        // double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+        // printf("Pack time: %f %d\n", time_spent, knapsack.place);
 
     }
 

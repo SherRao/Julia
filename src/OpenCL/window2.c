@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 // clang -o main window.c -L/usr/local/lib -lglfw -framework OpenGL
-// clang - o main window2.c - lglfw - framework OpenGL - framework OpenCL &&./ main
+// clang -o main window2.c -lglfw -framework OpenGL -framework OpenCL && ./main
 
 #define GL_SILENCE_DEPRECATION
 
@@ -78,8 +78,8 @@ int main(void)
         int i;
         const int LIST_SIZE = SIZE * SIZE; // 1024 * 1024;
         unsigned char *A = (unsigned char *)malloc(sizeof(unsigned char) * LIST_SIZE * 4);
-        // float B[2] = {-0.8, 0.143};
-        float B[2] = {-1.0, 0.0};
+        float B[2] = {-0.8, 0.143};
+        // float B[2] = {-1.0, 0.0};
         // float B[2] = {0.3, -0.4};
         // float B[2] = {-0.1, 0.8};
 
