@@ -194,8 +194,8 @@ int main(int argc, char **argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &process_Rank);
     MPI_Status status;
 
-    width = 30840;
-    height = 30160;
+    width = 10840;
+    height = 10160;
     int cluster = size_Of_Cluster - 1;
     // cluster = 2 - 1;
 
@@ -232,7 +232,7 @@ int main(int argc, char **argv)
             for (int k = 0; k < SIZE; k++)
                 MPI_Recv(knapsack.data[k + knapsack.place], knapsack.width * 4, MPI_BYTE, wants_work, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-            if (i == num_blocks - 1) knapsack.is_done = 1;
+            // if (i == num_blocks - 1) knapsack.is_done = 1;
 
             knapsack.place = i * SIZE + (cluster * SIZE);
             // Send a Knapsack
@@ -243,11 +243,24 @@ int main(int argc, char **argv)
 
         }
 
-            clock_t begin = clock();
-            write_img();
-            clock_t end = clock();
-            double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-            printf("Write time: %f %d\n", time_spent, knapsack.width);
+        
+
+        for(int i = 0; i < cluster; i++){
+            MPI_Recv(&wants_work, 1, MPI_INT, MPI_ANY_SOURCE, 5, MPI_COMM_WORLD, &status);
+            MPI_Recv(&knapsack, 4, MPI_INT, wants_work, 8, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+            for (int k = 0; k < SIZE; k++)
+                MPI_Recv(knapsack.data[k + knapsack.place], knapsack.width * 4, MPI_BYTE, wants_work, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            
+            knapsack.is_done = 1;
+            MPI_Send(&knapsack, 4, MPI_INT, wants_work, 7, MPI_COMM_WORLD);
+        }
+
+        clock_t begin = clock();
+        write_img();
+        clock_t end = clock();
+        double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+        printf("Write time: %f %d\n", time_spent, knapsack.width);
        
 
         }
@@ -280,6 +293,7 @@ int main(int argc, char **argv)
             // for (int k = knapsack.place; k < SIZE + knapsack.place; k++)
             //     MPI_Recv(knapsack.data[k], knapsack.width * 4, MPI_BYTE, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
+            if(knapsack.is_done != -1)
             pack_calc(knapsack.place);
             
             printf("Recieving %d\n", knapsack.place);
