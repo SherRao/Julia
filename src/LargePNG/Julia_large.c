@@ -126,10 +126,10 @@ void pack_calc(int index)
     float tmp = zx * zx - zy * zy + cx;
 
     // CHANGE PIXELS
-    for (y = index; y < height /*SIZE + index*/; y++, c++)
+    for (y = index; y < /*height*/ SIZE + index; y++, c++)
     {
         // printf("%d\n",y);
-        png_byte *row = knapsack.data[y];
+        png_byte *row = knapsack.data[/*y*/c];
 
         for (x = 0; x <= width; x++)
         {
@@ -208,9 +208,9 @@ void pack_calc(int index)
 
 void allocate(int s)
 {
-    img_data = (png_byte **)malloc(sizeof(png_byte *) * height);
+    img_data = (png_byte **)malloc(sizeof(png_byte *) * s);
 
-    for (y = 0; y < height; y++)
+    for (y = 0; y < s; y++)
         img_data[y] = (png_byte *)malloc(sizeof(png_bytep) * width);
 
     knapsack.height = height;
@@ -326,7 +326,9 @@ int main(int argc, char **argv)
             
 
             for (int k = 0; k < SIZE; k++)
-                MPI_Send(knapsack.data[k + knapsack.place], knapsack.width * 4, MPI_BYTE, 0, 2, MPI_COMM_WORLD);
+                // MPI_Send(knapsack.data[k + knapsack.place], knapsack.width * 4, MPI_BYTE, 0, 2, MPI_COMM_WORLD);
+                MPI_Send(knapsack.data[k], knapsack.width * 4, MPI_BYTE, 0, 2, MPI_COMM_WORLD);
+
             printf("NOT >>>>>\n");
             MPI_Recv(&knapsack, 4, MPI_INT, 0, 7, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             // if(knapsack.is_done != 1)
