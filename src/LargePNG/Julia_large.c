@@ -149,18 +149,56 @@ void pack_calc(int index)
                 zx = tmp;
                 if (zx * zx + zy * zy > 4.0)
                 {
-                    bit = 1;
+                    // bit = 1;
+                    bit = i % 5;
+                    if (bit == 0)
+                        bit = 5;
                     break;
                 }
             }
-
             if (bit == 0)
-                ptr[0] = 93;
+            {
+                ptr[0] = 0;
+                ptr[1] = 0;
+                ptr[2] = 0;
+            }
+            else if (bit == 1)
+            {
+                ptr[0] = 204;
+                ptr[1] = 107;
+                ptr[2] = 73;
+            }
+            else if (bit == 2)
+            {
+                ptr[0] = 210;
+                ptr[1] = 162;
+                ptr[2] = 76;
+            }
+            else if (bit == 3)
+            {
+                ptr[0] = 236;
+                ptr[1] = 230;
+                ptr[2] = 194;
+            }
+            else if (bit == 4)
+            {
+                ptr[0] = 115;
+                ptr[1] = 189;
+                ptr[2] = 168;
+            }
             else
-                ptr[0] = 255;
+            {
+                ptr[0] = 153;
+                ptr[1] = 190;
+                ptr[2] = 183;
+            }
+            // if (bit == 0)
+            //     ptr[0] = 93;
+            // else
+            //     ptr[0] = 255;
 
-            ptr[1] = 185;
-            ptr[2] = 239;
+            // ptr[1] = 185;
+            // ptr[2] = 239;
             ptr[3] = 255;
             // printf("%d ",x);
         }
@@ -168,7 +206,7 @@ void pack_calc(int index)
     }
 }
 
-void allocate()
+void allocate(int s)
 {
     img_data = (png_byte **)malloc(sizeof(png_byte *) * height);
 
@@ -201,7 +239,9 @@ int main(int argc, char **argv)
 
     int num_blocks = (height / SIZE);// add plus one edge case
 
-    allocate();
+    if(process_Rank == 0)
+    allocate(height);
+    else allocate(SIZE);
 
     if (process_Rank == 0)
     {
