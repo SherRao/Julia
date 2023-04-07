@@ -1,15 +1,15 @@
 #include <complex.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include <string.h>
-#include <stdarg.h>
-#include <stddef.h>
-#include <time.h>
 #include <math.h>
 #include <mpi.h>
 #include <png.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
 #include "block.h"
 #include "frame.h"
 
@@ -33,6 +33,12 @@ png_bytep *row_pointers;
 Frame frame;
 Block knapsack;
 png_byte **image_data;
+
+void write_image();
+void calculate(int);
+void allocate();
+void root_process();
+void child_process();
 
 /**
  *
@@ -110,7 +116,7 @@ void write_image()
  * @param index The index of the frame.
  *
  */
-void pack_calc(int index)
+void calculate(int index)
 {
     float scale = 1.5;
     float cx = frame.real;
@@ -205,6 +211,11 @@ void allocate()
     knapsack.data = image_data;
 }
 
+/**
+ *
+ * @brief Code ran by process rank 0 to handle results from all child processes,
+ *
+ */
 void root_process()
 {
     bool wants_work = true;
@@ -224,6 +235,11 @@ void root_process()
         MPI_Send(&frame, 4, MPI_INT, i, 1, MPI_COMM_WORLD);
 }
 
+/**
+ *
+ * @brief Code ran by all child processes to handle work from the root process.
+ *
+ */
 void child_process(int rank, int processor_count)
 {
     while (frame.index >= 0)
@@ -233,7 +249,7 @@ void child_process(int rank, int processor_count)
         if (frame.index != -1)
         {
             allocate();
-            pack_calc(0);
+            calculate(0);
             write_image();
         }
     }
@@ -246,6 +262,11 @@ void child_process(int rank, int processor_count)
     printf("Hello World from process %d of %d\n", rank, processor_count);
 }
 
+/**
+ *
+ * @brief Main function.
+ *
+ */
 int main(int argc, char **argv)
 {
     int rank;

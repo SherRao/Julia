@@ -1,30 +1,32 @@
-// mpicc video.c -o hello -O3 -lpng && mpirun -np 5 --use-hwthread-cpus  ./hello
-#include <unistd.h>
+#include <complex.h>
+#include <math.h>
+#include <mpi.h>
+#include <png.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdarg.h>
-#include <stddef.h>
-
-#include <mpi.h>
-
-#include <complex.h>
-#include <math.h>
 #include <time.h>
+#include <unistd.h>
+#include "block.h"
 
-#define PNG_DEBUG 3
-#include <png.h>
-
-int x, y;
+#define FRAME_COUNT 100
 #define MAX_ITER 50
+#define PNG_DEBUG 3
 #define SIZE 1000
+#define OUTPUT_FILE_NAME "a.png"
 
-int width, height;
+int x;
+int y;
+int width;
+int height;
 png_byte color_type;
 png_byte bit_depth;
 
 png_structp png_ptr;
-png_infop info_ptr;
+png_inis thfop info_ptr;
 int number_of_passes;
 png_bytep *row_pointers;
 
@@ -113,7 +115,7 @@ void write_img()
     fclose(fp);
 }
 
-void pack_calc(int index)
+void calculate(int index)
 {
     int bit = 0;
     float scale = 1.5;
@@ -309,7 +311,7 @@ int main(int argc, char **argv)
         // for (int k = knapsack.place; k < SIZE + knapsack.place; k++)
         //     MPI_Recv(knapsack.data[k], knapsack.width * 4, MPI_BYTE, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-        pack_calc(knapsack.place);
+        calculate(knapsack.place);
         printf("heerrre%d\n", knapsack.place);
 
         // clock_t begin = clock();
@@ -331,7 +333,7 @@ int main(int argc, char **argv)
             //     MPI_Recv(knapsack.data[k], knapsack.width * 4, MPI_BYTE, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
             if (knapsack.is_done != -1)
-                pack_calc(knapsack.place);
+                calculate(knapsack.place);
 
             printf("Recieving %d\n", knapsack.place);
         }
