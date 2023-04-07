@@ -126,10 +126,10 @@ void pack_calc(int index)
     float tmp = zx * zx - zy * zy + cx;
 
     // CHANGE PIXELS
-    for (y = index; y < height /*SIZE + index*/; y++, c++)
+    for (y = index; y < /*height*/ SIZE + index; y++, c++)
     {
         // printf("%d\n",y);
-        png_byte *row = knapsack.data[y];
+        png_byte *row = knapsack.data[/*y*/c];
 
         for (x = 0; x <= width; x++)
         {
@@ -149,18 +149,56 @@ void pack_calc(int index)
                 zx = tmp;
                 if (zx * zx + zy * zy > 4.0)
                 {
-                    bit = 1;
+                    // bit = 1;
+                    bit = i % 5;
+                    if (bit == 0)
+                        bit = 5;
                     break;
                 }
             }
-
             if (bit == 0)
-                ptr[0] = 93;
+            {
+                ptr[0] = 0;
+                ptr[1] = 0;
+                ptr[2] = 0;
+            }
+            else if (bit == 1)
+            {
+                ptr[0] = 204;
+                ptr[1] = 107;
+                ptr[2] = 73;
+            }
+            else if (bit == 2)
+            {
+                ptr[0] = 210;
+                ptr[1] = 162;
+                ptr[2] = 76;
+            }
+            else if (bit == 3)
+            {
+                ptr[0] = 236;
+                ptr[1] = 230;
+                ptr[2] = 194;
+            }
+            else if (bit == 4)
+            {
+                ptr[0] = 115;
+                ptr[1] = 189;
+                ptr[2] = 168;
+            }
             else
-                ptr[0] = 255;
+            {
+                ptr[0] = 153;
+                ptr[1] = 190;
+                ptr[2] = 183;
+            }
+            // if (bit == 0)
+            //     ptr[0] = 93;
+            // else
+            //     ptr[0] = 255;
 
-            ptr[1] = 185;
-            ptr[2] = 239;
+            // ptr[1] = 185;
+            // ptr[2] = 239;
             ptr[3] = 255;
             // printf("%d ",x);
         }
@@ -168,11 +206,11 @@ void pack_calc(int index)
     }
 }
 
-void allocate()
+void allocate(int s)
 {
-    img_data = (png_byte **)malloc(sizeof(png_byte *) * height);
+    img_data = (png_byte **)malloc(sizeof(png_byte *) * s);
 
-    for (y = 0; y < height; y++)
+    for (y = 0; y < s; y++)
         img_data[y] = (png_byte *)malloc(sizeof(png_bytep) * width);
 
     knapsack.height = height;
@@ -194,14 +232,16 @@ int main(int argc, char **argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &process_Rank);
     MPI_Status status;
 
-    width = 30840;
-    height = 30160;
+    width = 10840;
+    height = 10160;
     int cluster = size_Of_Cluster - 1;
     // cluster = 2 - 1;
 
     int num_blocks = (height / SIZE);// add plus one edge case
 
-    allocate();
+    if(process_Rank == 0)
+    allocate(height);
+    else allocate(SIZE);
 
     if (process_Rank == 0)
     {
@@ -232,7 +272,7 @@ int main(int argc, char **argv)
             for (int k = 0; k < SIZE; k++)
                 MPI_Recv(knapsack.data[k + knapsack.place], knapsack.width * 4, MPI_BYTE, wants_work, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-            if (i == num_blocks - 1) knapsack.is_done = 1;
+            // if (i == num_blocks - 1) knapsack.is_done = 1;
 
             knapsack.place = i * SIZE + (cluster * SIZE);
             // Send a Knapsack
@@ -243,11 +283,24 @@ int main(int argc, char **argv)
 
         }
 
-            clock_t begin = clock();
-            write_img();
-            clock_t end = clock();
-            double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-            printf("Write time: %f %d\n", time_spent, knapsack.width);
+        
+
+        for(int i = 0; i < cluster; i++){
+            MPI_Recv(&wants_work, 1, MPI_INT, MPI_ANY_SOURCE, 5, MPI_COMM_WORLD, &status);
+            MPI_Recv(&knapsack, 4, MPI_INT, wants_work, 8, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+            for (int k = 0; k < SIZE; k++)
+                MPI_Recv(knapsack.data[k + knapsack.place], knapsack.width * 4, MPI_BYTE, wants_work, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            
+            knapsack.is_done = 1;
+            MPI_Send(&knapsack, 4, MPI_INT, wants_work, 7, MPI_COMM_WORLD);
+        }
+
+        clock_t begin = clock();
+        write_img();
+        clock_t end = clock();
+        double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+        printf("Write time: %f %d\n", time_spent, knapsack.width);
        
 
         }
@@ -273,13 +326,16 @@ int main(int argc, char **argv)
             
 
             for (int k = 0; k < SIZE; k++)
-                MPI_Send(knapsack.data[k + knapsack.place], knapsack.width * 4, MPI_BYTE, 0, 2, MPI_COMM_WORLD);
+                // MPI_Send(knapsack.data[k + knapsack.place], knapsack.width * 4, MPI_BYTE, 0, 2, MPI_COMM_WORLD);
+                MPI_Send(knapsack.data[k], knapsack.width * 4, MPI_BYTE, 0, 2, MPI_COMM_WORLD);
+
             printf("NOT >>>>>\n");
             MPI_Recv(&knapsack, 4, MPI_INT, 0, 7, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             // if(knapsack.is_done != 1)
             // for (int k = knapsack.place; k < SIZE + knapsack.place; k++)
             //     MPI_Recv(knapsack.data[k], knapsack.width * 4, MPI_BYTE, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
+            if(knapsack.is_done != -1)
             pack_calc(knapsack.place);
             
             printf("Recieving %d\n", knapsack.place);
