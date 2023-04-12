@@ -44,6 +44,10 @@ typedef struct Block {
 block knapsack;
 png_byte **img_data;
 
+void write_img();
+void calculate(int index);  
+void allocate(int s);
+
 void write_img() {
     color_type = PNG_COLOR_TYPE_RGBA;
     bit_depth = 8;
@@ -53,29 +57,29 @@ void write_img() {
     FILE *fp = fopen(file, "wb");
 
     if (!fp) {
-        printf("[write_png_file] File %s could not be opened for writing", file);
+        fprintf(stderr, "[write_png_file] File %s could not be opened for writing", file);
     }
 
     png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 
     if (!png_ptr) {
-        printf("[write_png_file] png_create_write_struct failed");
+        fprintf(stderr, "[write_png_file] png_create_write_struct failed");
     }
 
     info_ptr = png_create_info_struct(png_ptr);
 
     if (!info_ptr) {
-        printf("[write_png_file] png_create_info_struct failed");
+        fprintf(stderr, "[write_png_file] png_create_info_struct failed");
     }
 
     if (setjmp(png_jmpbuf(png_ptr))) {
-        printf("[write_png_file] Error during init_io");
+        fprintf(stderr, "[write_png_file] Error during init_io");
     }
 
     png_init_io(png_ptr, fp);
 
     if (setjmp(png_jmpbuf(png_ptr))) {
-        printf("[write_png_file] Error during writing header");
+        fprintf(stderr, "[write_png_file] Error during writing header");
     }
 
     png_set_IHDR(png_ptr, info_ptr, width, height,
@@ -85,18 +89,18 @@ void write_img() {
     png_write_info(png_ptr, info_ptr);
 
     if (setjmp(png_jmpbuf(png_ptr))) {
-        printf("[write_png_file] Error during writing bytes");
+        fprintf(stderr, "[write_png_file] Error during writing bytes");
     }
 
     png_set_compression_level(png_ptr, 6);
     png_set_filter(png_ptr, 0, 0);
 
-    printf("HERE<<<<\n");
+    fprintf(stdout, "HERE<<<<\n");
     png_write_image(png_ptr, knapsack.data);
-    printf("THERE>>>>>\n");
+    fprintf(stdout, "THERE>>>>>\n");
 
     if (setjmp(png_jmpbuf(png_ptr))) {
-        printf("[write_png_file] Error during end of write");
+        fprintf(stderr, "[write_png_file] Error during end of write");
     }
 
     png_write_end(png_ptr, NULL);
