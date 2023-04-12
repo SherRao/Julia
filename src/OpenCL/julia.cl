@@ -78,7 +78,3 @@ __kernel void julia(__global uchar3 *A, __global float *B){ //, const unsigned i
         A[i].z = 204;
     }
 }
-
-
-
-
