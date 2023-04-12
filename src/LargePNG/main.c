@@ -32,8 +32,7 @@ png_bytep *row_pointers;
 
 char *file = "a.png";
 
-typedef struct Block
-{
+typedef struct Block {
     int size;
     int is_done;
     int place;
@@ -45,36 +44,39 @@ typedef struct Block
 block knapsack;
 png_byte **img_data;
 
-void write_img()
-{
+void write_img() {
     color_type = PNG_COLOR_TYPE_RGBA;
     bit_depth = 8;
 
     number_of_passes = 1;
 
-    // Start File
     FILE *fp = fopen(file, "wb");
-    if (!fp)
-        printf("[write_png_file] File %s could not be opened for writing", file);
 
-    /* initialize stuff */
+    if (!fp) {
+        printf("[write_png_file] File %s could not be opened for writing", file);
+    }
+
     png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 
-    if (!png_ptr)
+    if (!png_ptr) {
         printf("[write_png_file] png_create_write_struct failed");
+    }
 
     info_ptr = png_create_info_struct(png_ptr);
-    if (!info_ptr)
-        printf("[write_png_file] png_create_info_struct failed");
 
-    if (setjmp(png_jmpbuf(png_ptr)))
+    if (!info_ptr) {
+        printf("[write_png_file] png_create_info_struct failed");
+    }
+
+    if (setjmp(png_jmpbuf(png_ptr))) {
         printf("[write_png_file] Error during init_io");
+    }
 
     png_init_io(png_ptr, fp);
 
-    /* write header */
-    if (setjmp(png_jmpbuf(png_ptr)))
+    if (setjmp(png_jmpbuf(png_ptr))) {
         printf("[write_png_file] Error during writing header");
+    }
 
     png_set_IHDR(png_ptr, info_ptr, width, height,
                  bit_depth, color_type, PNG_INTERLACE_NONE,
@@ -82,41 +84,33 @@ void write_img()
 
     png_write_info(png_ptr, info_ptr);
 
-    /* write bytes */
-    if (setjmp(png_jmpbuf(png_ptr)))
+    if (setjmp(png_jmpbuf(png_ptr))) {
         printf("[write_png_file] Error during writing bytes");
+    }
 
-    // Decrease write time by 10x
     png_set_compression_level(png_ptr, 6);
     png_set_filter(png_ptr, 0, 0);
 
     printf("HERE<<<<\n");
-    // png_write_image(png_ptr, row_pointers);
     png_write_image(png_ptr, knapsack.data);
-    // png_write_rows(png_ptr, &knapsack.data, 40);
-    // png_write_row(png_ptr, &knapsack.data[4]);
     printf("THERE>>>>>\n");
-    /* end write */
-    if (setjmp(png_jmpbuf(png_ptr)))
+
+    if (setjmp(png_jmpbuf(png_ptr))) {
         printf("[write_png_file] Error during end of write");
+    }
 
     png_write_end(png_ptr, NULL);
 
-    // height = SIZE;
-    /* cleanup heap allocation */
-    // for (y = 0; y < height; y++)
-    //     free(row_pointers[y]);
-    // free(row_pointers);
-
-    for (y = 0; y < height; y++)
+    for (y = 0; y < height; y++) {
         free(knapsack.data[y]);
+    }
+
     free(knapsack.data);
 
     fclose(fp);
 }
 
-void calculate(int index)
-{
+void calculate(int index) {
     int bit = 0;
     float scale = 1.5;
     float cx = -0.8;
@@ -127,93 +121,64 @@ void calculate(int index)
     int c = 0;
     float tmp = zx * zx - zy * zy + cx;
 
-    // CHANGE PIXELS
-    for (y = index; y < /*height*/ SIZE + index; y++, c++)
-    {
-        // printf("%d\n",y);
-        png_byte *row = knapsack.data[/*y*/ c];
+    for (y = index; y < SIZE + index; y++, c++) {
+        png_byte *row = knapsack.data[c];
 
-        for (x = 0; x <= width; x++)
-        {
+        for (x = 0; x <= width; x++) {
             png_byte *ptr = &(row[x * 4]);
 
             bit = 0;
-            // scale = 1.5;
-            // cx = -0.8;
-            // cy = 0.156;
             zx = scale * (float)(width / 2 - x) / (width / 2);
             zy = scale * (float)(height / 2 - y) / (height / 2);
 
-            for (i = 0; i < MAX_ITER; i++)
-            {
+            for (i = 0; i < MAX_ITER; i++) {
                 tmp = zx * zx - zy * zy + cx;
                 zy = 2.0 * zx * zy + cy;
                 zx = tmp;
-                if (zx * zx + zy * zy > 4.0)
-                {
-                    // bit = 1;
+                if (zx * zx + zy * zy > 4.0) {
                     bit = i % 5;
-                    if (bit == 0)
+                    if (bit == 0) {
                         bit = 5;
+                    }
                     break;
                 }
             }
-            if (bit == 0)
-            {
+            if (bit == 0) {
                 ptr[0] = 0;
                 ptr[1] = 0;
                 ptr[2] = 0;
-            }
-            else if (bit == 1)
-            {
+            } else if (bit == 1) {
                 ptr[0] = 204;
                 ptr[1] = 107;
                 ptr[2] = 73;
-            }
-            else if (bit == 2)
-            {
+            } else if (bit == 2) {
                 ptr[0] = 210;
                 ptr[1] = 162;
                 ptr[2] = 76;
-            }
-            else if (bit == 3)
-            {
+            } else if (bit == 3) {
                 ptr[0] = 236;
                 ptr[1] = 230;
                 ptr[2] = 194;
-            }
-            else if (bit == 4)
-            {
+            } else if (bit == 4) {
                 ptr[0] = 115;
                 ptr[1] = 189;
                 ptr[2] = 168;
-            }
-            else
-            {
+            } else {
                 ptr[0] = 153;
                 ptr[1] = 190;
                 ptr[2] = 183;
             }
-            // if (bit == 0)
-            //     ptr[0] = 93;
-            // else
-            //     ptr[0] = 255;
-
-            // ptr[1] = 185;
-            // ptr[2] = 239;
             ptr[3] = 255;
-            // printf("%d ",x);
         }
-        // printf("%d - %d\n", y, bit);
     }
 }
 
-void allocate(int s)
-{
+void allocate(int s) {
     img_data = (png_byte **)malloc(sizeof(png_byte *) * s);
 
-    for (y = 0; y < s; y++)
+    for (y = 0; y < s; y++) {
         img_data[y] = (png_byte *)malloc(sizeof(png_bytep) * width);
+    }
 
     knapsack.height = height;
     knapsack.width = width;
@@ -224,8 +189,7 @@ void allocate(int s)
     knapsack.data = img_data;
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     int process_Rank, size_Of_Cluster;
 
     MPI_Init(&argc, &argv);
@@ -236,32 +200,23 @@ int main(int argc, char **argv)
     width = 10840;
     height = 10160;
     int cluster = size_Of_Cluster - 1;
-    // cluster = 2 - 1;
 
-    int num_blocks = (height / SIZE); // add plus one edge case
+    int num_blocks = (height / SIZE); 
 
-    if (process_Rank == 0)
+    if (process_Rank == 0) {
         allocate(height);
-    else
+    } else {
         allocate(SIZE);
+    }
 
-    if (process_Rank == 0)
-    {
+    if (process_Rank == 0) {
         int wants_work = 1;
 
-        // First give out work
-        for (int i = 0; i < cluster; i++)
-        {
+        for (int i = 0; i < cluster; i++) {
             knapsack.place = i * SIZE;
 
             MPI_Recv(&wants_work, 1, MPI_INT, MPI_ANY_SOURCE, 3, MPI_COMM_WORLD, &status);
-
-            // Send a Knapsack
             MPI_Send(&knapsack, 4, MPI_INT, wants_work, 1, MPI_COMM_WORLD);
-
-            // for (int k = 0; k < SIZE; k++){
-            //     MPI_Send(knapsack.data[k], knapsack.width * 4, MPI_BYTE, 1, 1, MPI_COMM_WORLD);
-            // }
         }
 
         printf("HELLLLLLLLOOOOOOO%d\n", num_blocks);
