@@ -220,32 +220,26 @@ int main(int argc, char **argv) {
         }
 
         printf("HELLLLLLLLOOOOOOO%d\n", num_blocks);
-        for (int i = 0; i < num_blocks - cluster; i++)
-        {
 
+        for (int i = 0; i < num_blocks - cluster; i++) {
             MPI_Recv(&wants_work, 1, MPI_INT, MPI_ANY_SOURCE, 5, MPI_COMM_WORLD, &status);
             MPI_Recv(&knapsack, 4, MPI_INT, wants_work, 8, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-            for (int k = 0; k < SIZE; k++)
+            for (int k = 0; k < SIZE; k++) {
                 MPI_Recv(knapsack.data[k + knapsack.place], knapsack.width * 4, MPI_BYTE, wants_work, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-
-            // if (i == num_blocks - 1) knapsack.is_done = 1;
+            }
 
             knapsack.place = i * SIZE + (cluster * SIZE);
-            // Send a Knapsack
             MPI_Send(&knapsack, 4, MPI_INT, wants_work, 7, MPI_COMM_WORLD);
-            // if(knapsack.is_done != 1)
-            // for (int k = 0; k < SIZE; k++)
-            //     MPI_Send(knapsack.data[k], knapsack.width * 4, MPI_BYTE, 1, 1, MPI_COMM_WORLD);
         }
 
-        for (int i = 0; i < cluster; i++)
-        {
+        for (int i = 0; i < cluster; i++) {
             MPI_Recv(&wants_work, 1, MPI_INT, MPI_ANY_SOURCE, 5, MPI_COMM_WORLD, &status);
             MPI_Recv(&knapsack, 4, MPI_INT, wants_work, 8, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-            for (int k = 0; k < SIZE; k++)
+            for (int k = 0; k < SIZE; k++) {
                 MPI_Recv(knapsack.data[k + knapsack.place], knapsack.width * 4, MPI_BYTE, wants_work, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            }
 
             knapsack.is_done = 1;
             MPI_Send(&knapsack, 4, MPI_INT, wants_work, 7, MPI_COMM_WORLD);
@@ -256,46 +250,30 @@ int main(int argc, char **argv) {
         clock_t end = clock();
         double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
         printf("Write time: %f %d\n", time_spent, knapsack.width);
-    }
-    else // if(process_Rank == 1)
-    {
-        // Ask for work
+    } else {
         MPI_Send(&process_Rank, 1, MPI_INT, 0, 3, MPI_COMM_WORLD);
         MPI_Recv(&knapsack, 4, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        // receive the data matrix
-        // for (int k = knapsack.place; k < SIZE + knapsack.place; k++)
-        //     MPI_Recv(knapsack.data[k], knapsack.width * 4, MPI_BYTE, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
         calculate(knapsack.place);
         printf("heerrre%d\n", knapsack.place);
 
-        // clock_t begin = clock();
-
-        while (knapsack.is_done == 0)
-        {
-
+        while (knapsack.is_done == 0) {
             MPI_Send(&process_Rank, 1, MPI_INT, 0, 5, MPI_COMM_WORLD);
             MPI_Send(&knapsack, 4, MPI_INT, 0, 8, MPI_COMM_WORLD);
 
-            for (int k = 0; k < SIZE; k++)
-                // MPI_Send(knapsack.data[k + knapsack.place], knapsack.width * 4, MPI_BYTE, 0, 2, MPI_COMM_WORLD);
+            for (int k = 0; k < SIZE; k++) {
                 MPI_Send(knapsack.data[k], knapsack.width * 4, MPI_BYTE, 0, 2, MPI_COMM_WORLD);
+            }
 
             printf("NOT >>>>>\n");
             MPI_Recv(&knapsack, 4, MPI_INT, 0, 7, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            // if(knapsack.is_done != 1)
-            // for (int k = knapsack.place; k < SIZE + knapsack.place; k++)
-            //     MPI_Recv(knapsack.data[k], knapsack.width * 4, MPI_BYTE, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-
-            if (knapsack.is_done != -1)
+        
+            if (knapsack.is_done != -1) {
                 calculate(knapsack.place);
+            }
 
             printf("Recieving %d\n", knapsack.place);
         }
-
-        // clock_t end = clock();
-        // double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-        // printf("Pack time: %f %d\n", time_spent, knapsack.place);
     }
 
     printf("Hello World from process %d of %d\n", process_Rank, size_Of_Cluster);
