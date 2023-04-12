@@ -1,7 +1,6 @@
 #include <png.h>
 
-typedef struct _Block
-{
+typedef struct _Block {
     int size;
     int is_done;
     int place;
