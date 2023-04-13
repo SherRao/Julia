@@ -38,7 +38,7 @@ void renderer(unsigned char *, unsigned char *);
  * @brief Error callback function.
  * @param error The error code.
  * @param description The error description.
- * @return Null
+ * @return void
  *
  */
 void error_callback(int error, const char *description) {
@@ -55,7 +55,7 @@ void error_callback(int error, const char *description) {
  * @param scancode The scancode.
  * @param action The action.
  * @param mods The mods.
- * @return Null
+ * @return void
  *
  */
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
@@ -72,7 +72,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
  * @param window The window.
  * @param width The width.
  * @param height The height.
- * @return Null
+ * @return void
  *
  */
 void frame_buffer_resize_callback(GLFWwindow *window, int width, int height) {
@@ -84,7 +84,7 @@ void frame_buffer_resize_callback(GLFWwindow *window, int width, int height) {
  * @brief Render the image.
  * @param data The image data.
  * @param A The image data.
- * @return Null
+ * @return void
  *
  */
 void renderer(unsigned char *data, unsigned char *A) {
@@ -101,7 +101,7 @@ void renderer(unsigned char *data, unsigned char *A) {
  *
  * @brief Main function.
  * @param void
- * @return Null
+ * @return void
  *
  */
 int main(void) {
