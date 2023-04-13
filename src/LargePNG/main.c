@@ -33,13 +33,13 @@ char *FILENAME = "a.png";
 
 png_byte COLOR_TYPE;
 png_byte BIT_DEPTH;
-png_byte **IMG_DATA;
+png_byte **IMAGE_DATA;
 
 png_structp PNG_PTR;
 png_inis thfop INFO_PTR;
 png_bytep *ROW_PTR;
 
-Block knapsack;
+Block KNAPSACK;
 
 /**
  *
@@ -53,8 +53,8 @@ void allocate(int size);
 /**
  *
  * @brief Write the image to a file.
- * @param Null
- * @return Null
+ * @param void
+ * @return void
  *
  */
 void write_img() {
@@ -105,7 +105,7 @@ void write_img() {
     png_set_filter(PNG_PTR, 0, 0);
 
     fprintf(stdout, "HERE<<<<\n");
-    png_write_image(PNG_PTR, knapsack.data);
+    png_write_image(PNG_PTR, KNAPSACK.data);
     fprintf(stdout, "THERE>>>>>\n");
 
     if (setjmp(png_jmpbuf(PNG_PTR))) {
@@ -115,10 +115,10 @@ void write_img() {
     png_write_end(PNG_PTR, NULL);
 
     for (y = 0; y < HEIGHT; y++) {
-        free(knapsack.data[y]);
+        free(KNAPSACK.data[y]);
     }
 
-    free(knapsack.data);
+    free(KNAPSACK.data);
 
     fclose(fp);
 
@@ -129,7 +129,7 @@ void write_img() {
  *
  * @brief Calculate the mandelbrot set.
  * @param index The index of the block.
- * @return Null
+ * @return void
  *
  */
 void calculate(int index) {
@@ -148,7 +148,7 @@ void calculate(int index) {
     float temp = (zx * zx - zy * zy + cx);
 
     for (y = index; y < SIZE + index; y++, c++) {
-        png_byte *row = knapsack.data[c];
+        png_byte *row = KNAPSACK.data[c];
 
         for (x = 0; x <= WIDTH; x++) {
             png_byte *ptr = &(row[x * 4]);
@@ -206,23 +206,23 @@ void calculate(int index) {
  *
  * @brief Allocate the image data.
  * @param size The size of the image.
- * @return Null
+ * @return void
  *
  */
 void allocate(int size) {
-    IMG_DATA = (png_byte **) malloc(sizeof(png_byte *) * size);
+    IMAGE_DATA = (png_byte **) malloc(sizeof(png_byte *) * size);
 
     for (y = 0; y < size; y++) {
-        IMG_DATA[y] = (png_byte *) malloc(sizeof(png_bytep) * WIDTH);
+        IMAGE_DATA[y] = (png_byte *) malloc(sizeof(png_bytep) * WIDTH);
     }
 
-    knapsack.height = HEIGHT;
-    knapsack.width = WIDTH;
-    knapsack.size = HEIGHT * WIDTH;
-    knapsack.place = 0;
-    knapsack.is_done = 0;
+    KNAPSACK.height = HEIGHT;
+    KNAPSACK.width = WIDTH;
+    KNAPSACK.size = HEIGHT * WIDTH;
+    KNAPSACK.place = 0;
+    KNAPSACK.is_done = 0;
 
-    knapsack.data = IMG_DATA;
+    KNAPSACK.data = IMAGE_DATA;
 
     return;
 }
@@ -260,34 +260,34 @@ int main(int argc, char **argv) {
         int next = 1;
 
         for (int i = 0; i < cluster; i++) {
-            knapsack.place = (i * SIZE);
+            KNAPSACK.place = (i * SIZE);
 
             MPI_Recv(&next, 1, MPI_INT, MPI_ANY_SOURCE, 3, MPI_COMM_WORLD, &status);
-            MPI_Send(&knapsack, 4, MPI_INT, next, 1, MPI_COMM_WORLD);
+            MPI_Send(&KNAPSACK, 4, MPI_INT, next, 1, MPI_COMM_WORLD);
         }
 
         for (int i = 0; i < num_blocks - cluster; i++) {
             MPI_Recv(&next, 1, MPI_INT, MPI_ANY_SOURCE, 5, MPI_COMM_WORLD, &status);
-            MPI_Recv(&knapsack, 4, MPI_INT, next, 8, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(&KNAPSACK, 4, MPI_INT, next, 8, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
             for (int k = 0; k < SIZE; k++) {
-                MPI_Recv(knapsack.data[k + knapsack.place], knapsack.width * 4, MPI_BYTE, next, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                MPI_Recv(KNAPSACK.data[k + KNAPSACK.place], KNAPSACK.width * 4, MPI_BYTE, next, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             }
 
-            knapsack.place = i * SIZE + (cluster * SIZE);
-            MPI_Send(&knapsack, 4, MPI_INT, next, 7, MPI_COMM_WORLD);
+            KNAPSACK.place = i * SIZE + (cluster * SIZE);
+            MPI_Send(&KNAPSACK, 4, MPI_INT, next, 7, MPI_COMM_WORLD);
         }
 
         for (int i = 0; i < cluster; i++) {
             MPI_Recv(&next, 1, MPI_INT, MPI_ANY_SOURCE, 5, MPI_COMM_WORLD, &status);
-            MPI_Recv(&knapsack, 4, MPI_INT, next, 8, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(&KNAPSACK, 4, MPI_INT, next, 8, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
             for (int k = 0; k < SIZE; k++) {
-                MPI_Recv(knapsack.data[k + knapsack.place], knapsack.width * 4, MPI_BYTE, next, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                MPI_Recv(KNAPSACK.data[k + KNAPSACK.place], KNAPSACK.width * 4, MPI_BYTE, next, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             }
 
-            knapsack.is_done = 1;
-            MPI_Send(&knapsack, 4, MPI_INT, next, 7, MPI_COMM_WORLD);
+            KNAPSACK.is_done = 1;
+            MPI_Send(&KNAPSACK, 4, MPI_INT, next, 7, MPI_COMM_WORLD);
         }
 
         clock_t begin = clock();
@@ -296,32 +296,32 @@ int main(int argc, char **argv) {
 
         double time_spent = ((double)(end - begin) / CLOCKS_PER_SEC);
 
-        fprintf(stdout, "Write time: %f %d\n", time_spent, knapsack.width);
+        fprintf(stdout, "Write time: %f %d\n", time_spent, KNAPSACK.width);
 
     } else {
         MPI_Send(&process_rank, 1, MPI_INT, 0, 3, MPI_COMM_WORLD);
-        MPI_Recv(&knapsack, 4, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(&KNAPSACK, 4, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-        calculate(knapsack.place);
+        calculate(KNAPSACK.place);
 
-        fprintf(stdout, "Recieving %d\n", knapsack.place);
+        fprintf(stdout, "Recieving %d\n", KNAPSACK.place);
 
-        while (knapsack.is_done == 0) {
+        while (KNAPSACK.is_done == 0) {
             MPI_Send(&process_rank, 1, MPI_INT, 0, 5, MPI_COMM_WORLD);
-            MPI_Send(&knapsack, 4, MPI_INT, 0, 8, MPI_COMM_WORLD);
+            MPI_Send(&KNAPSACK, 4, MPI_INT, 0, 8, MPI_COMM_WORLD);
 
             for (int k = 0; k < SIZE; k++) {
-                MPI_Send(knapsack.data[k], knapsack.WIDTH * 4, MPI_BYTE, 0, 2, MPI_COMM_WORLD);
+                MPI_Send(KNAPSACK.data[k], KNAPSACK.WIDTH * 4, MPI_BYTE, 0, 2, MPI_COMM_WORLD);
             }
 
-            fprintf(stdout, "Sending %d\n", knapsack.place);
-            MPI_Recv(&knapsack, 4, MPI_INT, 0, 7, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            fprintf(stdout, "Sending %d\n", KNAPSACK.place);
+            MPI_Recv(&KNAPSACK, 4, MPI_INT, 0, 7, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         
-            if (knapsack.is_done != -1) {
-                calculate(knapsack.place);
+            if (KNAPSACK.is_done != -1) {
+                calculate(KNAPSACK.place);
             }
 
-            fprintf(stdout, "Recieving %d\n", knapsack.place);
+            fprintf(stdout, "Recieving %d\n", KNAPSACK.place);
         }
     }
 
