@@ -11,7 +11,7 @@
 </div>
 
 ## Description :pushpin: 
-- Parallel programming project to render high-resolution images and videos of Julia sets in C by computing complex functions to plot points. The images are rendered by using OpenCL and OpenGL.
+- Parallel programming project to render high-resolution images and videos of Julia sets in C, using MPI, by computing complex functions to plot points. The images are rendered by using OpenCL and OpenGL.
 
 <div align="center">
   <img src="./assets/mandelbrot_sequence.gif"/>
