@@ -114,10 +114,10 @@ Low-level API - have to manage a lot of the graphics pipeline themselves, includ
   - Runs at 2.0GHz with 64GB of RAM per node
 - Results:
   - $10,000\times10,000$ pixels
-   <img src="./assets/10000_graph.png" />
+   <img src="https://github.com/SherRao/Julia/blob/main/assets/10000_graph.png" />
     
   - $30,000\times30,000$ pixels
-   <img src="./assets/30000_graph.png" />
+   <img src="https://github.com/SherRao/Julia/blob/main/assets/30000_graph.png" />
     
   - $50,000\times50,000$ pixels
-   <img src="./assets/50000_graph.png" />
+   <img src="https://github.com/SherRao/Julia/blob/main/assets/50000_graph.png" />
